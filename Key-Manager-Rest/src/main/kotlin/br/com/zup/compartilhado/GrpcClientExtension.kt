@@ -17,7 +17,7 @@ fun NovaChaveResponse.toModel(): NovaChavePixResponse{
 fun ConsultaChaveRespose.toModel(): ConsultaChavePixResponse {
     return ConsultaChavePixResponse(
         clienteId = clienteId,
-        chavePixId = chavePixId,
+        pixId = chavePixId,
         chavePix = ChavePixResponse(
             tipoChave = chavePix.tipoChave.toString(),
             chave = chavePix.chave,

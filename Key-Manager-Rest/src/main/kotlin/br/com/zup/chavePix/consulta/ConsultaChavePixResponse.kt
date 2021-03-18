@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 data class ConsultaChavePixResponse(
     val clienteId: String,
-    val chavePixId: String,
+    val pixId: String,
     val chavePix: ChavePixResponse,
 )
 

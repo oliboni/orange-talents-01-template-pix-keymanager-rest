@@ -3,23 +3,26 @@ package br.com.zup.chavePix
 import br.com.zup.*
 import br.com.zup.chavePix.cadastro.NovaChavePixRequest
 import br.com.zup.chavePix.cadastro.NovaChavePixResponse
+import br.com.zup.chavePix.consulta.ConsultaChaveByClienteResponse
 import br.com.zup.chavePix.consulta.ConsultaChavePixResponse
 import br.com.zup.compartilhado.toModel
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.MutableHttpResponse
 import io.micronaut.http.annotation.*
 import io.micronaut.validation.Validated
 import org.slf4j.LoggerFactory
 import java.util.*
 import javax.inject.Inject
 import javax.validation.Valid
+import kotlin.reflect.KFunction1
 
 @Validated
-@Controller("/api/chavePix/clientes")
+@Controller("/api/chavePix/clientes/{clienteId}")
 class ChavePixController(@Inject val grpcPix: PixServiceGrpc.PixServiceBlockingStub) {
 
     private val LOG = LoggerFactory.getLogger(ChavePixController::class.java)
 
-    @Post("/{clienteId}")
+    @Post
     fun registro(clienteId: UUID, @Body @Valid request: NovaChavePixRequest): HttpResponse<NovaChavePixResponse> {
         LOG.info("Gerando nova chave pix para cliente $clienteId")
 
@@ -38,7 +41,7 @@ class ChavePixController(@Inject val grpcPix: PixServiceGrpc.PixServiceBlockingS
         return HttpResponse.created(location)
     }
 
-    @Delete("/{clienteId}/pix/{pixId}")
+    @Delete("pix/{pixId}")
     fun remove(clienteId: UUID, pixId: UUID): HttpResponse<Any> {
         LOG.info("Removendo chave pix $pixId, cliente $clienteId")
 
@@ -53,7 +56,7 @@ class ChavePixController(@Inject val grpcPix: PixServiceGrpc.PixServiceBlockingS
         return HttpResponse.ok()
     }
 
-    @Get("/{clienteId}/pix/{pixId}")
+    @Get("pix/{pixId}")
     fun consultaChave(clienteId: UUID, pixId: UUID): HttpResponse<ConsultaChavePixResponse> {
         LOG.info("Consultando chave pix $pixId, cliente $clienteId")
         val response = ConsultaChaveRequest.newBuilder()
@@ -61,11 +64,24 @@ class ChavePixController(@Inject val grpcPix: PixServiceGrpc.PixServiceBlockingS
                 ConsultaChaveRequest.FiltroPorPixId.newBuilder()
                     .setClienteId(clienteId.toString())
                     .setPixId(pixId.toString())
+                    .build()
             )
             .build().let {
                 grpcPix.consulta(it)
             }.toModel()
 
         return HttpResponse.ok(response)
+    }
+
+    @Get
+    fun listaChaves(clienteId: UUID): HttpResponse<Any> {
+        LOG.info("Consultando lista de chaves, cliente $clienteId")
+        val lista = ConsultaByClienteRequest.newBuilder()
+            .setClienteId(clienteId.toString())
+            .build().let {
+                grpcPix.consultaByCliente(it)
+            }.chavePixList.map { ConsultaChaveByClienteResponse(it) }
+
+        return HttpResponse.ok(lista)
     }
 }
