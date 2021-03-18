@@ -1,0 +1,13 @@
+micronaut:
+  application:
+    name: keyManagerRest
+
+grpc:
+  client:
+    max-retry-attempts: 10
+    plaintext: true
+  channels:
+    pix:
+      address: '${PIX_HOST:localhost}:${PIX_PORT:50051}'
+      plaintext: true
+      max-retry-attempts: 10

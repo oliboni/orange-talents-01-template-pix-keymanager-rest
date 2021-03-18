@@ -2,6 +2,7 @@ package br.com.zup.chavePix
 
 import br.com.zup.NovaChaveRequest
 import br.com.zup.PixServiceGrpc
+import br.com.zup.TipoChave
 import br.com.zup.chavePix.cadastro.NovaChavePixRequest
 import br.com.zup.chavePix.cadastro.NovaChavePixResponse
 import br.com.zup.compartilhado.toModel
@@ -21,13 +22,15 @@ class ChavePixController(@Inject val grpcPix: PixServiceGrpc.PixServiceBlockingS
     fun registro(@Body @Valid request: NovaChavePixRequest): HttpResponse<NovaChavePixResponse> {
         val response = NovaChaveRequest.newBuilder()
             .setClienteId(request.clienteId)
-            .setTipoChave(request.tipoChave)
+            .setTipoChave(TipoChave.valueOf(request.tipoChave?.name!!))
             .setValorChave(request.valorChave)
             .setTipoConta(request.tipoConta)
             .build().let {
                 grpcPix.registro(it)
             }.toModel()
 
-        return HttpResponse.ok(response)
+
+        val location = HttpResponse.uri("/api/chavePix/clientes/${response.clienteId}/pix/${response.pixId}")
+        return HttpResponse.created(location)
     }
 }

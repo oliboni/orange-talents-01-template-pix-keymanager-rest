@@ -11,26 +11,34 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.HttpStatus.*
 import io.micronaut.http.MutableHttpResponse
 import io.micronaut.http.exceptions.HttpStatusException
+import io.micronaut.http.hateoas.JsonError
 import io.micronaut.http.server.exceptions.ExceptionHandler
+import org.slf4j.LoggerFactory
 import javax.inject.Singleton
 
 @Singleton
 @Requirements(
     Requires(classes = [StatusRuntimeException::class, ExceptionHandler::class])
 )
-class StatusRuntimeExceptionHandler:ExceptionHandler<StatusRuntimeException, HttpResponse<*>> {
+class StatusRuntimeExceptionHandler:ExceptionHandler<StatusRuntimeException, HttpResponse<Any>> {
 
-    override fun handle(request: HttpRequest<*>?, exception: StatusRuntimeException?): HttpResponse<*> {
-        val status = when (exception!!.status.code) {
-            INVALID_ARGUMENT -> BAD_REQUEST
-            NOT_FOUND -> HttpStatus.NOT_FOUND
-            ALREADY_EXISTS -> UNPROCESSABLE_ENTITY
-            else -> INTERNAL_SERVER_ERROR
+    private val log = LoggerFactory.getLogger(StatusRuntimeExceptionHandler::class.java)
+
+    override fun handle(request: HttpRequest<*>, exception: StatusRuntimeException): HttpResponse<Any> {
+        val statusCode = exception.status.code
+        val statusDescription = exception.status.description ?: ""
+
+        val (httpStatus,message) = when (statusCode) {
+            INVALID_ARGUMENT -> Pair(BAD_REQUEST,"Dados da requisição estão inválidos")
+            NOT_FOUND -> Pair(HttpStatus.NOT_FOUND,statusDescription)
+            ALREADY_EXISTS -> Pair(UNPROCESSABLE_ENTITY,statusDescription)
+            else -> {
+                log.info("Erro inesperado '${exception.javaClass.name}' ao processar requisição", exception)
+                Pair(INTERNAL_SERVER_ERROR,"Não foi possível completar a requisição. Erro: $statusDescription $statusCode")
+            }
         }
 
-        val response: MutableHttpResponse<*> = HttpResponse.status<Any>(status)
-
-        return response.body(exception.status.description)
+        return HttpResponse.status<JsonError>(httpStatus).body(JsonError(message))
 
     }
 }
