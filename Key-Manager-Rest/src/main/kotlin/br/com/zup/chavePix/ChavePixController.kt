@@ -1,18 +1,12 @@
 package br.com.zup.chavePix
 
-import br.com.zup.NovaChaveRequest
-import br.com.zup.PixServiceGrpc
-import br.com.zup.RemoveChaveRequest
-import br.com.zup.TipoChave
+import br.com.zup.*
 import br.com.zup.chavePix.cadastro.NovaChavePixRequest
 import br.com.zup.chavePix.cadastro.NovaChavePixResponse
+import br.com.zup.chavePix.consulta.ConsultaChavePixResponse
 import br.com.zup.compartilhado.toModel
 import io.micronaut.http.HttpResponse
-import io.micronaut.http.MutableHttpResponse
-import io.micronaut.http.annotation.Body
-import io.micronaut.http.annotation.Controller
-import io.micronaut.http.annotation.Delete
-import io.micronaut.http.annotation.Post
+import io.micronaut.http.annotation.*
 import io.micronaut.validation.Validated
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -57,5 +51,21 @@ class ChavePixController(@Inject val grpcPix: PixServiceGrpc.PixServiceBlockingS
         LOG.info("Chave pix $pixId removida com sucesso!")
 
         return HttpResponse.ok()
+    }
+
+    @Get("/{clienteId}/pix/{pixId}")
+    fun consultaChave(clienteId: UUID, pixId: UUID): HttpResponse<ConsultaChavePixResponse> {
+        LOG.info("Consultando chave pix $pixId, cliente $clienteId")
+        val response = ConsultaChaveRequest.newBuilder()
+            .setChavePixId(
+                ConsultaChaveRequest.FiltroPorPixId.newBuilder()
+                    .setClienteId(clienteId.toString())
+                    .setPixId(pixId.toString())
+            )
+            .build().let {
+                grpcPix.consulta(it)
+            }.toModel()
+
+        return HttpResponse.ok(response)
     }
 }
