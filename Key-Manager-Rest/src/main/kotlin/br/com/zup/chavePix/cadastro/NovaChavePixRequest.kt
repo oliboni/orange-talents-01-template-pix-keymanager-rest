@@ -13,8 +13,6 @@ import javax.validation.constraints.NotNull
 @Introspected
 data class NovaChavePixRequest (
     @field:NotBlank
-    @field:ValidUUID
-    val clienteId: String?,
 
     @field:NotNull
     val tipoChave: TipoDaChave?,
